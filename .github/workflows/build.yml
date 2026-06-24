@@ -10,11 +10,10 @@ jobs:
 
     env:
       PMB_WORK: ${{ github.workspace }}/pmbootstrap-work
-      PMB_CFG: ${{ github.workspace }}/pmbootstrap_v3.cfg
       PMB_EXPORT: ${{ github.workspace }}/postmarketos-export
 
     steps:
-      - name: Check out this repo
+      - name: Check out repo
         uses: actions/checkout@v4
 
       - name: Install host dependencies
@@ -39,55 +38,35 @@ jobs:
         run: |
           git clone --depth=1 https://gitlab.postmarketos.org/postmarketOS/pmbootstrap.git
 
-      - name: Create pmbootstrap config
-        run: |
-          mkdir -p "$PMB_WORK"
-          cat > "$PMB_CFG" <<'EOF'
-          [pmbootstrap]
-          device = motorola-nio
-          kernel = mainline
-          ui = phosh
-          user = user
-          hostname = moto-g100
-          work = __WORK__
-          EOF
-          sed -i "s|__WORK__|$PMB_WORK|g" "$PMB_CFG"
-          echo "----- pmbootstrap_v3.cfg -----"
-          cat "$PMB_CFG"
-
       - name: Initialize pmbootstrap
         run: |
-          python3 ./pmbootstrap/pmbootstrap.py \
-            -c "$PMB_CFG" \
-            -w "$PMB_WORK" \
-            init --shallow-initial-clone -y
+          export PATH="$PWD/pmbootstrap:$PATH"
+          python3 ./pmbootstrap/pmbootstrap.py -y -w "$PMB_WORK" init --shallow-initial-clone
 
-      - name: Force the config values again
+      - name: Set device config
         run: |
-          python3 ./pmbootstrap/pmbootstrap.py -c "$PMB_CFG" -w "$PMB_WORK" config device motorola-nio
-          python3 ./pmbootstrap/pmbootstrap.py -c "$PMB_CFG" -w "$PMB_WORK" config kernel mainline
-          python3 ./pmbootstrap/pmbootstrap.py -c "$PMB_CFG" -w "$PMB_WORK" config ui phosh
-          python3 ./pmbootstrap/pmbootstrap.py -c "$PMB_CFG" -w "$PMB_WORK" config user user
-          python3 ./pmbootstrap/pmbootstrap.py -c "$PMB_CFG" -w "$PMB_WORK" config hostname moto-g100
+          export PATH="$PWD/pmbootstrap:$PATH"
+          python3 ./pmbootstrap/pmbootstrap.py -w "$PMB_WORK" config device motorola-nio
+          python3 ./pmbootstrap/pmbootstrap.py -w "$PMB_WORK" config kernel mainline
+          python3 ./pmbootstrap/pmbootstrap.py -w "$PMB_WORK" config ui phosh
+          python3 ./pmbootstrap/pmbootstrap.py -w "$PMB_WORK" config user user
+          python3 ./pmbootstrap/pmbootstrap.py -w "$PMB_WORK" config hostname moto-g100
 
       - name: Show status
         run: |
-          python3 ./pmbootstrap/pmbootstrap.py -c "$PMB_CFG" -w "$PMB_WORK" status
+          export PATH="$PWD/pmbootstrap:$PATH"
+          python3 ./pmbootstrap/pmbootstrap.py -w "$PMB_WORK" status
 
-      - name: Build the image
+      - name: Build installation
         run: |
-          python3 ./pmbootstrap/pmbootstrap.py \
-            -c "$PMB_CFG" \
-            -w "$PMB_WORK" \
-            install --password 147147 --split
+          export PATH="$PWD/pmbootstrap:$PATH"
+          python3 ./pmbootstrap/pmbootstrap.py -y -w "$PMB_WORK" install --password 147147 --split
 
       - name: Export artifacts
         run: |
+          export PATH="$PWD/pmbootstrap:$PATH"
           mkdir -p "$PMB_EXPORT"
-          python3 ./pmbootstrap/pmbootstrap.py \
-            -c "$PMB_CFG" \
-            -w "$PMB_WORK" \
-            export "$PMB_EXPORT"
+          python3 ./pmbootstrap/pmbootstrap.py -w "$PMB_WORK" export "$PMB_EXPORT"
           find "$PMB_EXPORT" -maxdepth 2 -type f -ls
 
       - name: Upload artifacts
