@@ -1,0 +1,52 @@
+name: Build postmarketOS for Moto G100
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Install prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git python3 python3-pip zstd xz-utils
+
+      - name: Install pmbootstrap
+        run: |
+          git clone --depth=1 https://gitlab.postmarketos.org/postmarketOS/pmbootstrap.git
+          mkdir -p ~/.local/bin
+          ln -s "$PWD/pmbootstrap/pmbootstrap.py" ~/.local/bin/pmbootstrap
+          export PATH="$HOME/.local/bin:$PATH"
+          pmbootstrap --version
+
+      - name: Bootstrap pmbootstrap
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+
+          # Accept defaults to get a working bootstrap config, then override what we need.
+          yes "" | pmbootstrap init --shallow-initial-clone
+
+          pmbootstrap config device motorola-nio
+          pmbootstrap config ui phosh
+          pmbootstrap config user user
+          pmbootstrap config hostname motorola-nio
+
+      - name: Build image
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+
+          pmbootstrap install --password 147147 --split
+          pmbootstrap export ./out
+          find ./out -maxdepth 1 -type f -ls
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: postmarketos-motorola-nio
+          path: out/*
+          retention-days: 7
