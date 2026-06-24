@@ -38,14 +38,16 @@ jobs:
         run: |
           git clone --depth=1 https://gitlab.postmarketos.org/postmarketOS/pmbootstrap.git
 
+      - name: Show pmbootstrap version
+        run: |
+          python3 ./pmbootstrap/pmbootstrap.py --version
+
       - name: Initialize pmbootstrap
         run: |
-          export PATH="$PWD/pmbootstrap:$PATH"
           python3 ./pmbootstrap/pmbootstrap.py -y -w "$PMB_WORK" init --shallow-initial-clone
 
-      - name: Set device config
+      - name: Set config
         run: |
-          export PATH="$PWD/pmbootstrap:$PATH"
           python3 ./pmbootstrap/pmbootstrap.py -w "$PMB_WORK" config device motorola-nio
           python3 ./pmbootstrap/pmbootstrap.py -w "$PMB_WORK" config kernel mainline
           python3 ./pmbootstrap/pmbootstrap.py -w "$PMB_WORK" config ui phosh
@@ -54,17 +56,14 @@ jobs:
 
       - name: Show status
         run: |
-          export PATH="$PWD/pmbootstrap:$PATH"
           python3 ./pmbootstrap/pmbootstrap.py -w "$PMB_WORK" status
 
       - name: Build installation
         run: |
-          export PATH="$PWD/pmbootstrap:$PATH"
           python3 ./pmbootstrap/pmbootstrap.py -y -w "$PMB_WORK" install --password 147147 --split
 
       - name: Export artifacts
         run: |
-          export PATH="$PWD/pmbootstrap:$PATH"
           mkdir -p "$PMB_EXPORT"
           python3 ./pmbootstrap/pmbootstrap.py -w "$PMB_WORK" export "$PMB_EXPORT"
           find "$PMB_EXPORT" -maxdepth 2 -type f -ls
